@@ -15,7 +15,9 @@ COPY package*.json ./
 RUN --mount=type=secret,id=npm_token \
   echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/npm_token)" > .npmrc && \
   (npm ci --omit=dev || npm install --omit=dev) && \
-  rm -f .npmrc
+  rm -f .npmrc && \
+  npm cache clean --force && \
+  rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 COPY src ./src
 
