@@ -2,9 +2,7 @@
   "name": "user-service",
   "version": "2.0.0",
   "main": "src/index.js",
-  "engines": {
-    "node": ">=20.0.0"
-  },
+  "engines": { "node": ">=20.0.0" },
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
@@ -34,3 +32,4 @@
     "tar": "7.4.3"
   }
 }
+
