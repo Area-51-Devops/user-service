@@ -4,3 +4,9 @@ node_modules
 .git
 dist
 coverage
+# Never leak auth tokens into the build context
+.npmrc
+# Keep build context lean
+.github
+*.md
+sonar-project.properties

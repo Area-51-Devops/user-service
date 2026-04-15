@@ -1,13 +1,23 @@
-﻿FROM node:20-alpine
+FROM node:20-alpine
 WORKDIR /usr/src/app
 
 # Upgrade all OS packages to latest patched versions
 RUN apk update && apk upgrade --no-cache
 
-# Context is ./services, so copy paths must be relative to the services/ directory..
-COPY user-service/package*.json ./
-RUN npm ci --omit=dev
-COPY user-service/src ./src
+# Build-time arg for GitHub Packages authentication.
+# Passed in by the CI pipeline via --build-arg NODE_AUTH_TOKEN=<token>.
+# Written to .npmrc for the install step, then deleted so it never
+# survives into the final image layer.
+ARG NODE_AUTH_TOKEN
+
+# Docker context is the repo root ('.'), not services/ — paths are bare.
+COPY package*.json ./
+
+RUN echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc && \
+    npm ci --omit=dev && \
+    rm -f .npmrc
+
+COPY src ./src
 
 USER node
 
