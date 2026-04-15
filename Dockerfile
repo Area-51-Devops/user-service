@@ -14,8 +14,8 @@ ARG NODE_AUTH_TOKEN
 COPY package*.json ./
 
 RUN echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc && \
-    npm ci --omit=dev && \
-    rm -f .npmrc
+  npm ci --omit=dev && \
+  rm -f .npmrc
 
 COPY src ./src
 
@@ -28,3 +28,4 @@ CMD ["node", "src/index.js"]
 
 
 
+#try
