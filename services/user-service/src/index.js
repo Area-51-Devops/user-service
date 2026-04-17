@@ -13,14 +13,29 @@ const axiosRetryModule = require('axios-retry');
 const axiosRetry = axiosRetryModule.default || axiosRetryModule;
 
 const { logger } = require('@area-51-devops/shared');
+const { errorMiddleware } = require('../shared/errorMiddleware');
+const { requestIdMiddleware } = require('../shared/requestId');
+
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'nexus_banking_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '8h';
 const SALT_ROUNDS = 10;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable must be set');
+}
 
 let pool;
 let redisClient;
 let isStarted = false;   // used by /health/startup
+
+// Helper function to create error responses
+function createError(statusCode, code, message) {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  err.code = code;
+  return err;
+}
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Exponential backoff connector
@@ -44,10 +59,10 @@ async function init() {
   // MySQL pool
   pool = await connectWithRetry(async () => {
     const p = mysql.createPool({
-      host: process.env.DB_HOST || 'mysql',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASS || 'rootpassword',
-      database: process.env.DB_NAME || 'banking_db',
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASS,
+      database: process.env.DB_NAME,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0
@@ -61,7 +76,7 @@ async function init() {
   // Redis
   redisClient = await connectWithRetry(async () => {
     const client = new Redis({
-      host: process.env.REDIS_HOST || 'redis',
+      host: process.env.REDIS_HOST,
       port: parseInt(process.env.REDIS_PORT || '6379'),
       lazyConnect: true
     });
@@ -137,7 +152,8 @@ app.post('/users/register', async (req, res, next) => {
     const [userRows] = await pool.execute('SELECT role FROM users WHERE id = ?', [userId]);
     if (userRows.length > 0 && userRows[0].role !== 'ADMIN') {
       try {
-        const accountServiceUrl = process.env.ACCOUNT_SVC_URL || 'http://account-service:3002';
+          const accountServiceUrl = process.env.ACCOUNT_SVC_URL;
+          if (!accountServiceUrl) throw new Error('ACCOUNT_SVC_URL environment variable must be set');
         await internalClient.post(`${accountServiceUrl}/accounts`, { userId, accountType: 'SAVINGS' });
       } catch (accountErr) {
         log.error({ err: accountErr.message, userId }, 'Failed to create initial account, rolling back user registration');
