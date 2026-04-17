@@ -6,7 +6,11 @@ RUN apk update && apk upgrade --no-cache
 
 # Context is ./services, so copy paths must be relative to the services/ directory.
 COPY user-service/package*.json ./
-RUN (npm ci --omit=dev || npm install --omit=dev) && \
+COPY user-service/.npmrc ./
+
+# Build argument for GitHub token
+ARG NPM_TOKEN
+RUN NPM_TOKEN=$NPM_TOKEN npm ci --omit=dev && \
   npm cache clean --force && \
   rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 COPY user-service/src ./src
