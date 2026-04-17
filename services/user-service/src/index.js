@@ -120,6 +120,7 @@ app.get('/health/liveness', async (req, res, next) => {
     await redisClient.ping();
     res.json({ status: 'UP', service: 'user-service' });
   } catch (error_) {
+    logger.error({ err: error_.message }, 'Liveness check failed');
     next(createError(503, 'HEALTH_CHECK_FAILED', 'Liveness check failed'));
   }
 });
@@ -131,6 +132,7 @@ app.get('/health/readiness', async (req, res, next) => {
     await redisClient.ping();
     res.json({ status: 'READY', service: 'user-service' });
   } catch (error_) {
+    logger.error({ err: error_.message }, 'Readiness check failed');
     next(createError(503, 'NOT_READY', 'Service not ready'));
   }
 });
@@ -249,6 +251,7 @@ app.post('/users/verify-token', (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     res.json({ success: true, decoded });
   } catch (error_) {
+    logger.warn({ err: error_.message }, 'Token verification failed');
     next(createError(401, 'INVALID_TOKEN', 'Token is invalid or expired'));
   }
 });
