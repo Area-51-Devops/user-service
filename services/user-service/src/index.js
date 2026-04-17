@@ -69,7 +69,7 @@ async function init() {
   redisClient = await connectWithRetry(async () => {
     const client = new Redis({
       host: process.env.REDIS_HOST,
-      port: parseInt(process.env.REDIS_PORT || '6379'),
+      port: Number.parseInt(process.env.REDIS_PORT || '6379', 10),
       lazyConnect: true
     });
     await client.connect();
@@ -116,7 +116,7 @@ app.get('/health/liveness', async (req, res, next) => {
     await pool.execute('SELECT 1');
     await redisClient.ping();
     res.json({ status: 'UP', service: 'user-service' });
-  } catch (err) {
+  } catch (error_) {
     next(createError(503, 'HEALTH_CHECK_FAILED', 'Liveness check failed'));
   }
 });
@@ -127,7 +127,7 @@ app.get('/health/readiness', async (req, res, next) => {
     await pool.execute('SELECT 1');
     await redisClient.ping();
     res.json({ status: 'READY', service: 'user-service' });
-  } catch (err) {
+  } catch (error_) {
     next(createError(503, 'NOT_READY', 'Service not ready'));
   }
 });
@@ -165,8 +165,8 @@ app.post('/users/register', async (req, res, next) => {
           const accountServiceUrl = process.env.ACCOUNT_SVC_URL;
           if (!accountServiceUrl) throw new Error('ACCOUNT_SVC_URL environment variable must be set');
         await internalClient.post(`${accountServiceUrl}/accounts`, { userId, accountType: 'SAVINGS' });
-      } catch (accountErr) {
-        log.error({ err: accountErr.message, userId }, 'Failed to create initial account, rolling back user registration');
+      } catch (error_) {
+        log.error({ err: error_.message, userId }, 'Failed to create initial account, rolling back user registration');
         await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
         return next(createError(500, 'ACCOUNT_CREATION_FAILED', 'Failed to properly set up user account. Please try again later.'));
       }
@@ -174,11 +174,11 @@ app.post('/users/register', async (req, res, next) => {
 
     log.info({ userId }, 'User registered and account created');
     res.status(201).json({ success: true, userId, username });
-  } catch (err) {
-    if (err.code === 'ER_DUP_ENTRY') {
+  } catch (error_) {
+    if (error_.code === 'ER_DUP_ENTRY') {
       return next(createError(409, 'USER_EXISTS', 'Username already exists'));
     }
-    next(err);
+    next(error_);
   }
 });
 
@@ -217,8 +217,8 @@ app.post('/users/login', async (req, res, next) => {
       token,
       user: { id: user.id, username: user.username, email: user.email, role: user.role }
     });
-  } catch (err) {
-    next(err);
+  } catch (error_) {
+    next(error_);
   }
 });
 
@@ -233,8 +233,8 @@ app.get('/users/:id', async (req, res, next) => {
       return next(createError(404, 'USER_NOT_FOUND', 'User not found'));
     }
     res.json({ success: true, user: rows[0] });
-  } catch (err) {
-    next(err);
+  } catch (error_) {
+    next(error_);
   }
 });
 
@@ -245,7 +245,7 @@ app.post('/users/verify-token', (req, res, next) => {
     if (!token) return next(createError(400, 'MISSING_TOKEN', 'Token is required'));
     const decoded = jwt.verify(token, JWT_SECRET);
     res.json({ success: true, decoded });
-  } catch (err) {
+  } catch (error_) {
     next(createError(401, 'INVALID_TOKEN', 'Token is invalid or expired'));
   }
 });
