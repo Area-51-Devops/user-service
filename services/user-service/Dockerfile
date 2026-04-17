@@ -15,8 +15,8 @@ RUN --mount=type=secret,id=npm_token \
   npm cache clean --force && \
   rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
-COPY src ./src
-COPY ../shared ./shared
+COPY user-service/src ./src
+COPY shared ./shared
 
 USER node
 
