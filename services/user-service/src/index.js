@@ -26,7 +26,7 @@ if (!JWT_SECRET) {
 
 let pool;
 let redisClient;
-let isStarted = false;   // used by /health/startup
+let isStarted = false;   // used by /health/startup....
 
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
