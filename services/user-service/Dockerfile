@@ -1,26 +1,18 @@
 FROM node:20-alpine
 WORKDIR /usr/src/app
 
-# Upgrade all OS packages to latest patched versions
+# Upgrade all OS packages to latest patched versions.
 RUN apk update && apk upgrade --no-cache
 
-
-COPY package*.json ./
-
-# We mount a docker secret file representing the token during the run.
-RUN --mount=type=secret,id=npm_token \
-  echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/npm_token)" > .npmrc && \
-  (npm ci --omit=dev || npm install --omit=dev) && \
-  rm -f .npmrc && \
+# Context is ./services, so copy paths must be relative to the services/ directory.
+COPY user-service/package*.json ./
+RUN (npm ci --omit=dev || npm install --omit=dev) && \
   npm cache clean --force && \
   rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
-
 COPY user-service/src ./src
 COPY shared ./shared
 
-USER node
-
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD wget -qO- http://localhost:3001/health/startup || exit 1
+  CMD wget -qO- http://localhost:3005/health/startup || exit 1
 CMD ["node", "src/index.js"]
