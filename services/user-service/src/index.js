@@ -84,7 +84,25 @@ async function init() {
 // Express App
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const app = express();
-app.use(cors());
+
+// Configure CORS: restrict to allowed origins
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').filter(Boolean);
+    // Allow requests with no origin (mobile, curl, postman, etc)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy: origin not allowed'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(requestIdMiddleware);
 
